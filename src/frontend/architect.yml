@@ -1,0 +1,32 @@
+name: boutique-shop/frontend
+description: Web application serving the boutique shop microservices demo
+
+dependencies:
+  boutique-shop/product-catalog: latest
+  boutique-shop/currency: latest
+  boutique-shop/shopping-cart: latest
+  boutique-shop/recommendations: latest
+  boutique-shop/shipping: latest
+  boutique-shop/ads: latest
+  boutique-shop/checkout: latest
+
+services:
+  frontend:
+    build:
+      context: ./
+    interfaces:
+      main: 8080
+    environment:
+      PORT: 8080
+      PRODUCT_CATALOG_SERVICE_ADDR: ${{ dependencies['boutique-shop/product-catalog'].interfaces.api.url }}
+      CURRENCY_SERVICE_ADDR: ${{ dependencies['boutique-shop/currency'].interfaces.api.url }}
+      CART_SERVICE_ADDR: ${{ dependencies['boutique-shop/shopping-cart'].interfaces.api.url }}
+      RECOMMENDATION_SERVICE_ADDR: ${{ dependencies['boutique-shop/recommendations'].interfaces.api.url }}
+      SHIPPING_SERVICE_ADDR: ${{ dependencies['boutique-shop/shipping'].interfaces.api.url }}
+      AD_SERVICE_ADDR: ${{ dependencies['boutique-shop/ads'].interfaces.api.url }}
+      CHECKOUT_SERVICE_ADDR: ${{ dependencies['boutique-shop/checkout'].interfaces.api.url }}
+
+interfaces:
+  frontend:
+    description: Exposes the boutique shop webapp to upstream callers or the public web
+    url: ${{ services.frontend.interfaces.main.url }}

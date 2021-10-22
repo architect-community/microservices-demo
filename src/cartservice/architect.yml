@@ -1,26 +1,42 @@
-name: examples/boutique-cartservice
+name: boutique-shop/shopping-cart
 description: Shopping cart service powering the Boutique Shop example
-keywords:
-  - gcp
-  - demo
-  - ecommerce
-  - shopping
+
+parameters:
+  existing_redis_hostname:
+    description: Hostname of an existing redis instance to use instead of provisioning a new one
+    required: false
+  cartservice_host:
+    required: false
 
 services:
   cart-db:
     image: redis
     interfaces:
-      main: 6379
+      main:
+        host: ${{ parameters.existing_redis_hostname }}
+        port: 6379
+    volumes:
+      data:
+        mount_path: /data
+    debug:
+      volumes:
+        data:
+          host_path: ./.data
 
   cartservice:
     build:
-      context: ./src/
+      context: ./src
     interfaces:
-      main: &cart-port 7070
+      main:
+        host: ${{ parameters.cartservice_host }}
+        port: 7070
     environment:
-      PORT: *cart-port
+      PORT: 7070
       LISTEN_ADDR: 0.0.0.0
       REDIS_ADDR: ${{ services.cart-db.interfaces.main.host }}:${{ services.cart-db.interfaces.main.port }}
+    debug:
+      build:
+        dockerfile: Dockerfile.debug
 
 interfaces:
   api:

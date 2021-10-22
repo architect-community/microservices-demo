@@ -1,0 +1,70 @@
+name: Preview changes
+
+on:
+  pull_request:
+    branches:
+      - master
+
+jobs:
+  detect-changes:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v2
+      - name: Install jq
+        run: sudo apt-get update && sudo apt-get install jq
+      - id: detect
+        name: Detect changes
+        run: |
+          export CHANGED_DIRS=$(find ./src/*/architect.yml -type f -maxdepth 0 -exec sh -c 'test $(git diff-tree --name-only --no-commit-id -r ${{ github.sha }} -- $(dirname $1) | wc -c) -ne 0 && dirname $1' sh {}  \;)
+          find ./src/*/architect.yml -type f -maxdepth 0 -exec sh -c 'git diff-tree --name-only --no-commit-id -r ${{ github.sha }}' sh {}  \;
+          echo $CHANGED_DIRS
+          echo "::set-output name=matrix::$(jq -n -c --arg v "$CHANGED_DIRS" '{"component_path": $v | split("\n") }')"
+    outputs:
+      matrix: ${{ steps.detect.outputs.matrix }}
+  
+  preview-env:
+    needs: detect-changes
+    runs-on: ubuntu-latest
+    strategy:
+      matrix: ${{ fromJson(needs.detect-changes.outputs.matrix) }}
+    steps:
+      - uses: actions/checkout@v2
+      - uses: actions/setup-node@v2
+        with:
+          node-version: '16'
+      - name: Install Architect CLI
+        run: sudo npm install -g @architect-io/cli
+      - name: Login to Architect Cloud
+        run: architect login -e ${{ secrets.ARCHITECT_EMAIL }} -p ${{ secrets.ARCHITECT_PASSWORD }}
+      - name: Register component w/ Architect
+        run: architect register ${{ matrix.component_path }} -t preview-${{ github.event.number }}
+      - id: parser
+        name: Parse component name
+        uses: mikefarah/yq@master
+        with:
+          cmd: |
+            COMPONENT_NAME=$(yq e '.name' ${{ matrix.component_path }})
+            echo "::set-output name=component_name::$COMPONENT_NAME"
+            echo "::set-output name=account_name::$(echo $COMPONENT_NAME | cut -d/ -f1)"
+      - name: Create env if not exists
+        run: architect environment:create preview-${{ github.event.number }} -a ${{ steps.parser.outputs.account_name }} --platform architect --ttl 3d || exit 0
+      - name: Deploy component
+        run: architect deploy --auto-approve -a ${{ steps.parser.outputs.account_name }} -e preview-${{ github.event.number }} ${{ steps.parser.outputs.component_name }}:preview-${{ github.event.number }}
+
+  register-components:
+    needs: detect-changes
+    runs-on: ubuntu-latest
+    strategy:
+      matrix: ${{ fromJson(needs.detect-changes.outputs.matrix) }}
+    steps:
+      - uses: actions/checkout@master
+      - uses: actions/setup-node@v2
+        with:
+          node-version: '16'
+      - name: Install Architect CLI
+        run: sudo npm install -g @architect-io/cli
+      - name: Architect login
+        run: architect login -e ${{ secrets.ARCHITECT_ACCT_EMAIL }} -p ${{ secrets.ARCHITECT_ACCT_PASSWORD }}
+      - name: Register component
+        run: architect register ${{ matrix.component_path }} -t latest

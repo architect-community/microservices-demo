@@ -1,0 +1,50 @@
+name: Cut all releases
+
+on:
+  release:
+    types:
+      - published
+    branches:
+      - master
+    tags:
+      - v*.*.*
+
+jobs:
+  detect-component-folders:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v2
+      - name: Install jq
+        run: sudo apt-get update && sudo apt-get install jq
+      - id: detect
+        name: Detect changes
+        run: |
+          export DIRS=$(find ./src/*/architect.yml -type f -maxdepth 0)
+          echo "::set-output name=matrix::$(jq -n -c --arg v "$DIRS" '{"component_path": $v | split("\n") }')"
+    outputs:
+      matrix: ${{ steps.detect.outputs.matrix }}
+  
+  register-components:
+    needs: detect-component-folders
+    runs-on: ubuntu-latest
+    strategy:
+      matrix: ${{ fromJson(needs.detect-component-folders.outputs.matrix) }}
+    steps:
+      - uses: actions/checkout@master
+      - uses: actions/setup-node@v2
+        with:
+          node-version: '16'
+      - name: Install Architect CLI
+        run: sudo npm install -g @architect-io/cli
+      - name: Architect login
+        run: architect login -e ${{ secrets.ARCHITECT_ACCT_EMAIL }} -p ${{ secrets.ARCHITECT_ACCT_PASSWORD }}
+      - id: version
+        name: Parse version
+        run: echo "::set-output name=version::$(${GITHUB_REF/refs\/tags\//} | cut -dv -f2)"
+      - name: Register major version
+        run: architect register ${{ matrix.component_path }} -t v$(echo ${{ steps.version.outputs.version }} | cut -d. -f1)
+      - name: Register minor version
+        run: architect register ${{ matrix.component_path }} -t v$(echo ${{ steps.version.outputs.version }} | cut -d. -f1).$(echo ${{ steps.version.outputs.version }} | cut -d. -f2)
+      - name: Register patch version
+        run: architect register ${{ matrix.component_path }} -t v$(echo ${{ steps.version.outputs.version }} | cut -d. -f1).$(echo ${{ steps.version.outputs.version }} | cut -d. -f2).$(echo ${{ steps.version.outputs.version }} | cut -d. -f3)

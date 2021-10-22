@@ -12,3 +12,12 @@ pkg/
 .project
 .eclipse.buildship.core.prefs
 release/wi-kubernetes-manifests.yaml
+
+terraform/.terraform*
+terraform/defaults.tfvars
+terraform/tfplan
+terraform/terraform.tfstate
+terraform/terraform.tfstate.backup
+values.yml
+terraform/architect-kubeconfig
+terraform/private_ssh_key

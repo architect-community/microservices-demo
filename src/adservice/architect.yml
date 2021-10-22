@@ -1,0 +1,16 @@
+name: boutique-shop/ads
+description: Advertisement service used as part of the boutique shop microservices demo
+
+services:
+  ad:
+    build:
+      context: ./
+    interfaces:
+      main: 9555
+    environment:
+      PORT: 9555
+
+interfaces:
+  api:
+    description: Exposes the advertisement service to upstream requests
+    url: ${{ services.ad.interfaces.main.url }}

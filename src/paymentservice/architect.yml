@@ -1,0 +1,17 @@
+
+name: boutique-shop/payments
+description: Payments service used as part of the boutique shop microservices demo
+
+services:
+  payments:
+    build:
+      context: ./
+    interfaces:
+      main: 50051
+    environment:
+      PORT: 50051
+
+interfaces:
+  api:
+    description: Exposes the payments service to upstream requests
+    url: ${{ services.payments.interfaces.main.url }}

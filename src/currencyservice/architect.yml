@@ -1,0 +1,16 @@
+name: boutique-shop/currency
+description: Currency service used as part of the boutique shop microservices demo
+
+services:
+  currency:
+    build:
+      context: ./
+    interfaces:
+      main: 7000
+    environment:
+      PORT: 7000
+
+interfaces:
+  api:
+    description: Exposes the currency service to upstream requests
+    url: ${{ services.currency.interfaces.main.url }}

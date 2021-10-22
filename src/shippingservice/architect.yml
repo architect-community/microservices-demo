@@ -1,0 +1,16 @@
+name: boutique-shop/shipping
+description: Shipping service used as part of the boutique shop microservices demo
+
+services:
+  shipping:
+    build:
+      context: ./
+    interfaces:
+      main: 50051
+    environment:
+      PORT: 50051
+
+interfaces:
+  api:
+    description: Exposes the shipping service to upstream requests
+    url: ${{ services.shipping.interfaces.main.url }}

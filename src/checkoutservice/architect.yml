@@ -1,0 +1,30 @@
+name: boutique-shop/checkout
+description: Checkout service used as part of the boutique shop microservices demo
+
+dependencies:
+  boutique-shop/product-catalog: latest
+  boutique-shop/shopping-cart: latest
+  boutique-shop/currency: latest
+  boutique-shop/email: latest
+  boutique-shop/payments: latest
+  boutique-shop/shipping: latest
+
+services:
+  checkout:
+    build:
+      context: ./
+    interfaces:
+      main: 5050
+    environment:
+      PORT: 5050
+      PRODUCT_CATALOG_SERVICE_ADDR: ${{ dependencies['boutique-shop/product-catalog'].interfaces.api.url }}
+      SHIPPING_SERVICE_ADDR: ${{ dependencies['boutique-shop/shipping'].interfaces.api.url }}
+      PAYMENT_SERVICE_ADDR: ${{ dependencies['boutique-shop/payments'].interfaces.api.url }}
+      EMAIL_SERVICE_ADDR: ${{ dependencies['boutique-shop/email'].interfaces.api.url }}
+      CURRENCY_SERVICE_ADDR: ${{ dependencies['boutique-shop/currency'].interfaces.api.url }}
+      CART_SERVICE_ADDR: ${{ dependencies['boutique-shop/shopping-cart'].interfaces.api.url }}
+
+interfaces:
+  api:
+    description: Exposes the checkout service to upstream requests
+    url: ${{ services.checkout.interfaces.main.url }}

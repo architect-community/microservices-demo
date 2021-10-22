@@ -1,0 +1,16 @@
+name: boutique-shop/product-catalog
+description: Product catalog service used as part of the boutique shop microservices demo
+
+services:
+  catalog:
+    build:
+      context: ./
+    interfaces:
+      main: 3550
+    environment:
+      PORT: 3550
+
+interfaces:
+  api:
+    description: Exposes the product catalog service to upstream requests
+    url: ${{ services.catalog.interfaces.main.url }}

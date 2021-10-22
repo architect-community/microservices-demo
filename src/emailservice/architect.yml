@@ -1,0 +1,16 @@
+name: boutique-shop/email
+description: Email service used as part of the boutique shop microservices demo
+
+services:
+  email:
+    build:
+      context: ./
+    interfaces:
+      main: 8080
+    environment:
+      PORT: 8080
+
+interfaces:
+  api:
+    description: Exposes the email service to upstream requests
+    url: ${{ services.email.interfaces.main.url }}
