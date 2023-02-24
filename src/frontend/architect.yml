@@ -14,6 +14,14 @@ services:
   frontend:
     build:
       context: ./
+    command: /go/bin/frontend
+    debug:
+      command: air -c .air.toml
+      volumes:
+        src:
+          description: Mount the src dir when running locally so code changes can be detected
+          mount_path: /src
+          host_path: ./
     interfaces:
       main: 8080
     environment:
